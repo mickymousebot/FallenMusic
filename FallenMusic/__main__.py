@@ -22,10 +22,9 @@
 
 import asyncio
 import importlib
+import os
 import threading
 from flask import Flask
-import os
-
 from pyrogram import idle
 
 from FallenMusic import (
@@ -42,6 +41,19 @@ from FallenMusic import (
     pytgcalls,
 )
 from FallenMusic.Modules import ALL_MODULES
+
+# ------------------- Flask Health Server -------------------
+def start_flask():
+    app = Flask(__name__)
+
+    @app.route('/health')
+    def health():
+        return 'OK', 200
+
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
+
+# -----------------------------------------------------------
 
 
 async def fallen_startup():
@@ -90,5 +102,6 @@ async def fallen_startup():
 
 
 if __name__ == "__main__":
+    threading.Thread(target=start_flask).start()  # Start Flask for health check
     asyncio.get_event_loop().run_until_complete(fallen_startup())
     LOGGER.error("Fallen Music Bot Stopped.")
