@@ -1,13 +1,23 @@
 FROM nikolaik/python-nodejs:python3.9-nodejs18
 
-RUN apt-get update -y && apt-get upgrade -y \
-    && apt-get install -y --no-install-recommends ffmpeg \
+# System dependencies
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    ffmpeg \
+    build-essential \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-COPY . /app/
-WORKDIR /app/
+# Set working directory
+WORKDIR /app
 
-RUN pip3 install --no-cache-dir --upgrade --requirement requirements.txt
+# Copy files (using .dockerignore to exclude unnecessary files)
+COPY . .
 
-CMD bash fallen
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Run command (modified for Koyeb)
+CMD ["python3", "-m", "FallenMusic"]
