@@ -21,9 +21,10 @@
 # SOFTWARE.
 
 import os
-
 from yt_dlp import YoutubeDL
+from pyrogram.errors import BadRequest
 
+# Initialize with default options
 ydl_opts = {
     "format": "bestaudio/best",
     "outtmpl": "downloads/%(id)s.%(ext)s",
@@ -32,6 +33,7 @@ ydl_opts = {
     "quiet": True,
     "no_warnings": True,
     "prefer_ffmpeg": True,
+    "cookiefile": "cookies.txt",  # Add cookie support
     "postprocessors": [
         {
             "key": "FFmpegExtractAudio",
@@ -40,13 +42,26 @@ ydl_opts = {
         }
     ],
 }
-ydl = YoutubeDL(ydl_opts)
-
 
 def audio_dl(url: str) -> str:
-    sin = ydl.extract_info(url, False)
-    x_file = os.path.join("downloads", f"{sin['id']}.mp3")
-    if os.path.exists(x_file):
-        return x_file
-    ydl.download([url])
-    return x_file
+    try:
+        # Check if cookies file exists
+        if not os.path.exists("cookies.txt"):
+            ydl_opts.pop("cookiefile", None)  # Remove cookiefile if no cookies
+        
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            x_file = os.path.join("downloads", f"{info['id']}.mp3")
+            
+            if os.path.exists(x_file):
+                return x_file
+                
+            # Download if file doesn't exist
+            ydl.download([url])
+            return x_file
+            
+    except Exception as e:
+        error_message = f"Failed to download audio: {str(e)}"
+        if "Sign in to confirm you're not a bot" in str(e):
+            error_message += "\n\n⚠️ YouTube is blocking requests. Please update cookies.txt with fresh YouTube cookies."
+        raise BadRequest(error_message)
